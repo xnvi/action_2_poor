@@ -15,5 +15,8 @@ set(CMAKE_BUILD_TYPE "Debug")
 add_compile_definitions(
 )
 
+# 编译其他公用库文件
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/utils/ov5640)
+
 # hello_world 测试程序
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/app/hello_world)
