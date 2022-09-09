@@ -20,3 +20,6 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/utils/ov5640)
 
 # hello_world 测试程序
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/app/hello_world)
+
+# 外设测试程序
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/app/peripheral_test)
