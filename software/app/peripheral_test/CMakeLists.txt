@@ -15,6 +15,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../hisi_sdk/include)
 list(APPEND SOURCE_CODE
     ./main.c
 	./ov5640.c
+	./mpu6050.c
 	${CMAKE_CURRENT_SOURCE_DIR}/../../utils/himm.c
 	${CMAKE_CURRENT_SOURCE_DIR}/../../utils/gpio.c
 	${CMAKE_CURRENT_SOURCE_DIR}/../../utils/i2c.c

@@ -19,6 +19,7 @@
 #include "spi.h"
 #include "gpio.h"
 #include "ft6206.h"
+#include "mpu6050.h"
 #include "ov5640.h"
 #include "st7789.h"
 
@@ -110,6 +111,7 @@ int main(int argc, char **argv)
     int i2c_fd0 = 0;
     int i2c_fd2 = 0;
     I2CDevice dev_ft6206;
+    I2CDevice dev_mpu6050;
     I2CDevice dev_ov5640;
 
     gpio_t *gpio_0_0;
@@ -157,6 +159,7 @@ int main(int argc, char **argv)
         return -1;
     }
 
+
 	// 触摸屏测试
     printf("==== FT6206 touch test ====\n");
     printf("  Touch the screen to check touch coordinate.\n");
@@ -178,6 +181,28 @@ int main(int argc, char **argv)
                     touch_info.points[1].x, touch_info.points[1].y);
         }
         usleep(50 * 1000);
+    }
+
+
+    // 陀螺仪、加速度计测试
+    printf("==== MPU6050 test ====\n");
+    printf("  Move the PCB to check accelerometer and gyroscope.\n");
+    dev_mpu6050.bus = i2c_fd2;
+    dev_mpu6050.addr = MPU6050_DEV_ADDR;
+    dev_mpu6050.tenbit = 0;
+    dev_mpu6050.delay = 1;
+    dev_mpu6050.flags = 0;
+    dev_mpu6050.page_bytes = 256;
+    dev_mpu6050.iaddr_bytes = 1; /* Set this to zero, and using i2c_ioctl_xxxx API will ignore chip internal address */
+    mpu6050_init((void *)&dev_mpu6050);
+    mpu_data acc_gyro_data;
+    memset(&acc_gyro_data, 0, sizeof(acc_gyro_data));
+    for(i = 0; i < 100; i++) {
+        mpu6050_read((void *)&dev_mpu6050, &acc_gyro_data);
+        printf("ax=%06d ay=%06d az=%06d    gx=%06d gy=%06d gz=%06d\n",
+                acc_gyro_data.all[0], acc_gyro_data.all[1], acc_gyro_data.all[2],
+                acc_gyro_data.all[3], acc_gyro_data.all[4], acc_gyro_data.all[5]);
+        usleep(100 * 1000);
     }
 
 
