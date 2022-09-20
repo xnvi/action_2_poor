@@ -19,6 +19,11 @@
 #define GET_I2C_FLAGS(tenbit, flags) ((tenbit) ? ((flags) | I2C_M_TEN) : (flags))
 #define GET_WRITE_SIZE(addr, remain, page_bytes) ((addr) + (remain) > (page_bytes) ? (page_bytes) - (addr) : remain)
 
+#define SWP32(num) ((( (unsigned int )(num) & 0xff000000) >> 24)  | \
+                    (( (unsigned int )(num) & 0x00ff0000) >> 8)   | \
+                    (( (unsigned int )(num) & 0x0000ff00) << 8)   | \
+                    (( (unsigned int )(num) & 0x000000ff) << 24)) 
+
 static void i2c_delay(unsigned char delay);
 
 /*
@@ -320,7 +325,7 @@ void i2c_iaddr_convert(unsigned int iaddr, unsigned int len, unsigned char *addr
     } convert;
 
     /* I2C internal address order is big-endian, same with network order */
-    convert.iaddr = htonl(iaddr);
+    convert.iaddr = SWP32(iaddr);
 
     /* Copy address to addr buffer */
     int i = len - 1;
