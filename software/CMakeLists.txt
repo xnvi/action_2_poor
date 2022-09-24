@@ -27,3 +27,6 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/app/peripheral_test)
 
 # LVGL 测试程序
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/app/lvgl_test)
+
+# UDP 音视频流测试程序
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/app/udp_video)
