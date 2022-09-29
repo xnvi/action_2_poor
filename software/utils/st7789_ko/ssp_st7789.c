@@ -401,7 +401,7 @@ static int st7789_draw_area(unsigned short x1, unsigned short y1,
 static void st7789_fill(unsigned short color)
 {
     int i;
-
+    spi_enable();
     st7789_set_area(0, 0, 239, 239);
     ssp_write_cmd(0x2C);
 
@@ -410,6 +410,7 @@ static void st7789_fill(unsigned short color)
         spi_write_byte(color >> 8);
         spi_write_byte(color);
     }
+    spi_disable();
 }
 
 static long ssp_lcd_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
