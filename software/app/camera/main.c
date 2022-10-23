@@ -17,6 +17,7 @@
 #include "ft6206.h"
 #include "ssp_st7789.h"
 #include "lvgl.h"
+#include "cam_gui.h"
 
 #include "himpp.h"
 #include "camera_config.h"
@@ -38,7 +39,6 @@ static pthread_manger_t sg_pth_lvgl = {0};
 
 static lv_color_t sg_lcd_buf1[LCD_SCREEN_WIDTH * LCD_SCREEN_HEIGHT / 2];
 static lv_color_t sg_lcd_buf2[LCD_SCREEN_WIDTH * LCD_SCREEN_HEIGHT / 2];
-static uint8_t sg_pv_img_buf[PREVIEW_WIDTH * PREVIEW_HEIGHT * LV_COLOR_SIZE / 8];
 
 int i2c_fd2 = 0;
 int lcd_fd = 0;
@@ -265,20 +265,7 @@ void *pth_lvgl_func(void *args)
     indev_drv_2.read_cb = my_mouse_read;
     lv_indev_t *mouse_indev = lv_indev_drv_register(&indev_drv_2);
 
-    // 初始化预览图相关
-    lv_pv_area = lv_img_create(lv_scr_act());
-    lv_obj_remove_style_all(lv_pv_area);
-    lv_obj_align(lv_pv_area , LV_ALIGN_TOP_LEFT, 0, 30);
-
-    // 下面这一堆代码的作用和 lv_img_buf_alloc 基本一致
-    lv_pv_img.header.always_zero = 0;
-    lv_pv_img.header.w = preview_u32Width;
-    lv_pv_img.header.h = preview_u32Height;
-    lv_pv_img.header.cf = LV_IMG_CF_TRUE_COLOR;
-    lv_pv_img.data_size = lv_img_buf_get_img_size(preview_u32Width, preview_u32Height, LV_IMG_CF_RGB565);
-    lv_pv_img.data = sg_pv_img_buf;
-    lv_img_set_src(lv_pv_area , &lv_pv_img);
-
+    cam_gui_init();
 
     clock_gettime(CLOCK_MONOTONIC, &tp);
     tp_old = tp;
@@ -291,7 +278,7 @@ void *pth_lvgl_func(void *args)
             ret = get_preview_img(sg_pv_img_buf);
             if (ret == 0) {
                 //刷新缩略图
-                lv_obj_invalidate(lv_pv_area);
+                lv_obj_invalidate(video_preview_obj);
             }
         }
 
@@ -300,7 +287,10 @@ void *pth_lvgl_func(void *args)
         tp_old = tp;
         lv_tick_inc((uint32_t)period_ms);
         lv_timer_handler();
-        usleep(20 * 1000);
+
+        // TODO 处理物理按键
+
+        usleep(21 * 1000);
     }
 
     lv_deinit();

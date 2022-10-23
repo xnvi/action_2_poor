@@ -11,12 +11,14 @@ include_directories(../../utils/)
 include_directories(../../utils/st7789_ko/)
 include_directories(../../ext_lib/lvgl/)
 include_directories(../../ext_lib/libmpeg/include)
+include_directories(../../ext_lib/stb)
 
 # 添加源文件
 list(APPEND SOURCE_CODE
     ./main.c
     ./src/media.c
     ./src/camera_config.c
+    ./src/cam_gui.c
     ./src/color_convert.c
     ./src/audio_aac_adp.c
     ./src/audio_dl_adp.c
@@ -31,6 +33,7 @@ list(APPEND SOURCE_CODE
     ../../utils/himm.c
     ../../utils/ft6206.c
     ../../utils/i2c.c
+    ../../utils/lv_stb_truetype.c
 )
 
 # 添加 LVGL 源文件
