@@ -45,17 +45,17 @@ gyro_log_err_code mpu6050_init(void *args)
     i2c_ioctl_write(i2c_dev, MPU6050_REG_CONFIG, buf, 1);
 
     // 加速度计量程
-    // buf[0] = 0; // +/- 2 g
-    buf[0] = 1; // +/- 4 g
-    // buf[0] = 2; // +/- 8 g
-    // buf[0] = 3; // +/- 16 g
+    // buf[0] = 0 << 3; // +/- 2 g
+    buf[0] = 1 << 3; // +/- 4 g
+    // buf[0] = 2 << 3; // +/- 8 g
+    // buf[0] = 3 << 3; // +/- 16 g
     i2c_ioctl_write(i2c_dev, MPU6050_REG_ACCEL_CONFIG, buf, 1);
 
     // 陀螺仪量程
-    // buf[0] = 0; // +/- 250 deg/s
-    // buf[0] = 1; // +/- 500 deg/s
-    buf[0] = 2; // +/- 1000 deg/s
-    // buf[0] = 3; // +/- 2000 deg/s
+    // buf[0] = 0 << 3; // +/- 250 deg/s
+    // buf[0] = 1 << 3; // +/- 500 deg/s
+    buf[0] = 2 << 3; // +/- 1000 deg/s
+    // buf[0] = 3 << 3; // +/- 2000 deg/s
     i2c_ioctl_write(i2c_dev, MPU6050_REG_GYRO_CONFIG, buf, 1);
 
     // 设置需要写入FIFO的数据

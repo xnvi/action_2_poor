@@ -32,11 +32,11 @@ int mpu6050_init(void *args)
     i2c_ioctl_write(i2c_dev, MPU6050_REG_CONFIG, buf, 1);
 
     // 加速度计量程
-    buf[0] = 1; // +/- 4 g
+    buf[0] = 1 << 3; // +/- 4 g
     i2c_ioctl_write(i2c_dev, MPU6050_REG_ACCEL_CONFIG, buf, 1);
 
     // 陀螺仪量程
-    buf[0] = 2; // +/- 1000 deg/s
+    buf[0] = 2 << 3; // +/- 1000 deg/s
     i2c_ioctl_write(i2c_dev, MPU6050_REG_GYRO_CONFIG, buf, 1);
 
     return 0;
