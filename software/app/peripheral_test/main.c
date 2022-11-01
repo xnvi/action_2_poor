@@ -22,6 +22,7 @@
 #include "mpu6050.h"
 #include "ov5640.h"
 #include "st7789.h"
+#include "hisi_adc.h"
 
 // 读取内部寄存器并计算温度
 float read_temperature()
@@ -73,10 +74,11 @@ int set_reg()
 
 
     // PWM 设置
-	// TODO
+    // TODO
 
-    // ADC 设置
-	// TODO
+    // ADC 引脚复用设置
+    himm(0x120C0000, 0x00000001); // ch0
+    himm(0x120C0004, 0x00000001); // ch1
 
 
     // 音视频等相关设置
@@ -103,7 +105,6 @@ int set_reg()
     return 0;
 }
 
-extern void hi_ssp_demo(void);
 int main(int argc, char **argv)
 {
     int32_t i = 0;
@@ -113,7 +114,6 @@ int main(int argc, char **argv)
     I2CDevice dev_ft6206;
     I2CDevice dev_mpu6050;
     I2CDevice dev_ov5640;
-
     gpio_t *gpio_0_0;
 
     printf("hello world\n");
@@ -122,7 +122,6 @@ int main(int argc, char **argv)
     set_reg();
 
     printf("core temperature %.2f\n", read_temperature());
-
 
     // GPIO_0_0 测试
     gpio_0_0 = gpio_new();
@@ -147,7 +146,23 @@ int main(int argc, char **argv)
     }
     gpio_close(gpio_0_0);
     gpio_free(gpio_0_0);
-    
+
+
+    // ADC 测试
+    printf("==== ADC test ====\n");
+    printf("  Change the voltage on ADC pin.\n");
+
+    hiadc_init();
+    hiadc_enable_ch0(1);
+    hiadc_enable_ch1(1);
+    for (i = 0; i < 50; i++) {
+        printf("count %d, ch0: %d, ch1 %d \n", i, hiadc_get_ch0(), hiadc_get_ch1());
+        usleep(100 * 1000);
+    }
+    hiadc_deinit();
+
+
+
     i2c_fd0 = i2c_open("/dev/i2c-0");
     if (i2c_fd0 < 0) {
         printf("open /dev/i2c-0 error");
@@ -160,7 +175,7 @@ int main(int argc, char **argv)
     }
 
 
-	// 触摸屏测试
+    // 触摸屏测试
     printf("==== FT6206 touch test ====\n");
     printf("  Touch the screen to check touch coordinate.\n");
     dev_ft6206.bus = i2c_fd2;
@@ -206,7 +221,7 @@ int main(int argc, char **argv)
     }
 
 
-	// OV5640 寄存器读写测试
+    // OV5640 寄存器读写测试
     printf("==== OV5640 read write test ====\n");
     dev_ov5640.bus = i2c_fd0;
     dev_ov5640.addr = OV5640_DEV_ADDR;

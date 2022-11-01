@@ -14,14 +14,15 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../hisi_sdk/include)
 # 添加源文件
 list(APPEND SOURCE_CODE
     ./main.c
-	./ov5640.c
-	./mpu6050.c
-	${CMAKE_CURRENT_SOURCE_DIR}/../../utils/himm.c
-	${CMAKE_CURRENT_SOURCE_DIR}/../../utils/gpio.c
-	${CMAKE_CURRENT_SOURCE_DIR}/../../utils/i2c.c
-	${CMAKE_CURRENT_SOURCE_DIR}/../../utils/spi.c
-	${CMAKE_CURRENT_SOURCE_DIR}/../../utils/ft6206.c
-	${CMAKE_CURRENT_SOURCE_DIR}/../../utils/st7789.c
+    ./ov5640.c
+    ./mpu6050.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../utils/himm.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../utils/hisi_adc.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../utils/gpio.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../utils/i2c.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../utils/spi.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../utils/ft6206.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../utils/st7789.c
 )
 
 # 生成可执行程序
