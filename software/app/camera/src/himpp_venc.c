@@ -36,6 +36,9 @@ extern "C" {
 
 #include "himpp.h"
 
+// my edit
+#include "camera_himpp_config.h"
+
 const HI_U8 g_SOI[2] = {0xFF, 0xD8};
 const HI_U8 g_EOI[2] = {0xFF, 0xD9};
 static pthread_t gs_VencPid;
@@ -636,20 +639,21 @@ HI_S32 HIMPP_VENC_Creat(VENC_CHN VencChn, PAYLOAD_TYPE_E enType,  PIC_SIZE_E enS
                 stH265Cbr.fr32DstFrameRate  = u32FrameRate; /* target frame rate */
                 switch (enSize)
                 {
+                    // my edit 目前只使用cbr，这里通过码率设置图像质量
                     case PIC_VGA:
-                        stH265Cbr.u32BitRate = 1024 + 512*u32FrameRate/30;
+                        stH265Cbr.u32BitRate = (1024 + 512*u32FrameRate/30) * g_br_list[g_br_index].num/g_br_list[g_br_index].den;
                         break;
                     case PIC_720P:
-                        stH265Cbr.u32BitRate = 1024 * 2 + 1024*u32FrameRate/30;
+                        stH265Cbr.u32BitRate = (1024 * 2 + 1024*u32FrameRate/30) * g_br_list[g_br_index].num/g_br_list[g_br_index].den;
                         break;
                     case PIC_1080P:
-                        stH265Cbr.u32BitRate = 1024 * 2 + 2048*u32FrameRate/30;
+                        stH265Cbr.u32BitRate = (1024 * 2 + 2048*u32FrameRate/30) * g_br_list[g_br_index].num/g_br_list[g_br_index].den;
                         break;
                     case PIC_2592x1944:
-                        stH265Cbr.u32BitRate = 1024 * 3 + 3072*u32FrameRate/30;
+                        stH265Cbr.u32BitRate = (1024 * 3 + 3072*u32FrameRate/30) * g_br_list[g_br_index].num/g_br_list[g_br_index].den;
                         break;
                     case PIC_3840x2160:
-                        stH265Cbr.u32BitRate = 1024 * 5  + 5120*u32FrameRate/30;
+                        stH265Cbr.u32BitRate = (1024 * 5  + 5120*u32FrameRate/30) * g_br_list[g_br_index].num/g_br_list[g_br_index].den;
                         break;
                     default : //other small resolution
                         stH265Cbr.u32BitRate = 256;
@@ -858,20 +862,21 @@ HI_S32 HIMPP_VENC_Creat(VENC_CHN VencChn, PAYLOAD_TYPE_E enType,  PIC_SIZE_E enS
                 stH264Cbr.fr32DstFrameRate      = u32FrameRate; /* target frame rate */
                 switch (enSize)
                 {
+                    // my edit 目前只使用cbr，这里通过码率设置图像质量
                     case PIC_VGA:
-                        stH264Cbr.u32BitRate = 1024 + 512*u32FrameRate/30;
+                        stH264Cbr.u32BitRate = (1024 + 512*u32FrameRate/30) * g_br_list[g_br_index].num/g_br_list[g_br_index].den;
                         break;
                     case PIC_720P:
-                        stH264Cbr.u32BitRate = 1024 * 2  + 1024*u32FrameRate/30;
+                        stH264Cbr.u32BitRate = (1024 * 2  + 1024*u32FrameRate/30) * g_br_list[g_br_index].num/g_br_list[g_br_index].den;
                         break;
                     case PIC_1080P:
-                        stH264Cbr.u32BitRate = 1024 * 2  + 2048*u32FrameRate/30;
+                        stH264Cbr.u32BitRate = (1024 * 2  + 2048*u32FrameRate/30) * g_br_list[g_br_index].num/g_br_list[g_br_index].den;
                         break;
                     case PIC_2592x1944:
-                        stH264Cbr.u32BitRate = 1024 * 3  + 3072*u32FrameRate/30;
+                        stH264Cbr.u32BitRate = (1024 * 3  + 3072*u32FrameRate/30) * g_br_list[g_br_index].num/g_br_list[g_br_index].den;
                         break;
                     case PIC_3840x2160:
-                        stH264Cbr.u32BitRate = 1024 * 5 + 5120*u32FrameRate/30;
+                        stH264Cbr.u32BitRate = (1024 * 5 + 5120*u32FrameRate/30) * g_br_list[g_br_index].num/g_br_list[g_br_index].den;
                         break;
                     default :  //other small resolution
                         stH264Cbr.u32BitRate = 512;
@@ -2110,7 +2115,7 @@ HI_VOID* HIMPP_VENC_GetVencStreamProc(HI_VOID* p)
 #ifndef __HuaweiLite__
                     // s32Ret = HIMPP_VENC_SaveStream(pFile[i], &stStream);
                     // my edit
-                    get_hisi_video_frame(i, &stStream);
+                    get_hisi_video_frame(VencChn, &stStream);
 #else
                     s32Ret = HIMPP_VENC_SaveStream_PhyAddr(pFile[i], &stStreamBufInfo[i], &stStream);
 #endif

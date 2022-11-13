@@ -21,7 +21,7 @@ extern "C" {
 #include <unistd.h>
 #include <signal.h>
 #include <sys/mman.h>
-#include "camera_config.h"
+#include "camera_himpp_config.h"
 #include "himpp.h"
 
 

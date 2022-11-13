@@ -18,8 +18,8 @@
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "stb_truetype.h"
 
-#define EN_FONT_PATH "./Inconsolata-Bold.ttf"
-#define ZH_FONT_PATH "./HarmonyOS_Sans_SC_Regular_L1.ttf"
+#define EN_FONT_PATH "./font/Inconsolata-Bold.ttf"
+#define ZH_FONT_PATH "./font/HarmonyOS_Sans_SC_Regular_L1.ttf"
 // 中英文字体文件的静态内存，根据对应字体文件的实际大小设置
 #define EN_FONT_SIZE (96 * 1024)
 #define ZH_FONT_SIZE (928* 1024)

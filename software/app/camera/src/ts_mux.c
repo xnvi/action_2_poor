@@ -18,7 +18,7 @@ typedef struct {
     int video_stream_id; // 必须初始化为-1，因为初始化失败也可能是0，导致音频与视频id重叠
     int audio_stream_id; // 必须初始化为-1，因为初始化失败也可能是0，导致音频与视频id重叠
     uint8_t ts_pkt_buf[TS_PACK_SIZE];
-    pthread_mutex_t lock; // TODO
+    pthread_mutex_t lock;
 } ts_base_handle;
 
 ts_err_code ts_init(void **ts_handle)
@@ -113,13 +113,16 @@ ts_err_code ts_open_file(void *ts_handle, char venc_type, char *file_name)
         return TS_PARAM_NULL_PTR;
     }
 
-    if (access(file_name, F_OK) == 0) {
-        // printf("file %s exist\n", file_names);
-        return TS_FILE_OTHER_ERROR;
+    if (venc_type != '4' && venc_type != '5') {
+        // printf("unknown venc type %d", venc_type);
+        return TS_PARAM_INVALID;
     }
+
+    pthread_mutex_lock(&base_handle->lock);
     base_handle->fp = fopen(file_name, "wb");
     if (base_handle->fp == NULL) {
         // printf("open file %s error", DUMP_TS_PATH);
+        pthread_mutex_unlock(&base_handle->lock);
         return TS_FILE_NOT_OPEN;
     }
 
@@ -129,10 +132,8 @@ ts_err_code ts_open_file(void *ts_handle, char venc_type, char *file_name)
         base_handle->video_stream_id = mpeg_ts_add_stream(base_handle->mpeg_ts_handle, PSI_STREAM_H264, NULL, 0);
     } else if (venc_type == '5') {
         base_handle->video_stream_id = mpeg_ts_add_stream(base_handle->mpeg_ts_handle, PSI_STREAM_H265, NULL, 0);
-    } else {
-        // printf("unknown venc type %d", venc_type);
-        return TS_PARAM_INVALID;
     }
+    pthread_mutex_unlock(&base_handle->lock);
 
     return TS_OK;
 }
@@ -151,6 +152,7 @@ ts_err_code ts_close_file(void *ts_handle)
         return TS_OK;
     }
 
+    pthread_mutex_lock(&base_handle->lock);
     mpeg_ts_destroy(base_handle->mpeg_ts_handle);
     base_handle->mpeg_ts_handle = NULL;
 
@@ -158,6 +160,7 @@ ts_err_code ts_close_file(void *ts_handle)
         fclose(base_handle->fp);
         base_handle->fp = NULL;
     }
+    pthread_mutex_unlock(&base_handle->lock);
 
     return TS_OK;
 }

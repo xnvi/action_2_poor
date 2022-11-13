@@ -12,7 +12,8 @@
 #include "media.h"
 #include "color_convert.h"
 #include "audio_aac_adp.h"
-#include "camera_config.h"
+#include "camera_base_config.h"
+#include "camera_himpp_config.h"
 #include "himm.h"
 #include "ts_mux.h"
 #include "himpp.h"
@@ -44,15 +45,80 @@ typedef struct {
     pthread_mutex_t lock;
     hisi_sdk_state_e hisi_state;
     rec_state_e rec_state;
+    uint64_t rec_start_ms;
 
     uint8_t *vbuf; // 用来将编码器输出的数据拼成一个完整视频帧
     void *ts_handle;
-    char filename[128];
+    char dir_path[64];
+    char filename[64];
     perview_img_ctx pv_ctx;
 } media_context_t;
 static media_context_t sg_media_ctx = {0};
 
 extern void OV5640_init(VI_PIPE ViPipe);
+
+
+int32_t rec_set_filename(char *filename)
+{
+    if (strlen(filename) > sizeof(sg_media_ctx.filename) - 1) {
+        return 1;
+    }
+    pthread_mutex_lock(&sg_media_ctx.lock);
+    memset(sg_media_ctx.filename, 0, sizeof(sg_media_ctx.filename));
+    strcpy(sg_media_ctx.filename, filename);
+    pthread_mutex_unlock(&sg_media_ctx.lock);
+    return 0;
+}
+
+void rec_set_state(rec_state_e state)
+{
+    char full_name[128];
+    struct timeval time_base;
+    uint64_t time_ms;
+    pthread_mutex_lock(&sg_media_ctx.lock);
+    sg_media_ctx.rec_state = state;
+    pthread_mutex_unlock(&sg_media_ctx.lock);
+
+    if (sg_media_ctx.rec_state == REC_STATE_DO_START) {
+        memset(full_name, 0, sizeof(full_name));
+        strcat(full_name, sg_media_ctx.dir_path);
+        strcat(full_name, sg_media_ctx.filename);
+        strcat(full_name, ".ts");
+        // 读取配置，设置编码格式，应该读取实际编码器的设置，暂且这样写吧
+        if (g_enPayLoad[0] == PT_H264) {
+            ts_open_file(sg_media_ctx.ts_handle, '4', full_name);
+        }
+        else if (g_enPayLoad[0] == PT_H265) {
+            ts_open_file(sg_media_ctx.ts_handle, '5', full_name);
+        }
+
+        gettimeofday(&time_base, NULL);
+        time_ms = time_base.tv_sec * 1000 + time_base.tv_usec / 1000;
+
+        pthread_mutex_lock(&sg_media_ctx.lock);
+        sg_media_ctx.rec_start_ms = time_ms;
+        sg_media_ctx.rec_state = REC_STATE_START_OK;
+        pthread_mutex_unlock(&sg_media_ctx.lock);
+    }
+
+    if (sg_media_ctx.rec_state == REC_STATE_DO_STOP) {
+        ts_close_file(sg_media_ctx.ts_handle);
+
+        pthread_mutex_lock(&sg_media_ctx.lock);
+        sg_media_ctx.rec_state = REC_STATE_STOP_OK;
+        pthread_mutex_unlock(&sg_media_ctx.lock);
+    }
+}
+
+rec_state_e rec_get_state(void)
+{
+    return sg_media_ctx.rec_state;
+}
+
+uint64_t rec_get_start_time_ms(void)
+{
+    return sg_media_ctx.rec_start_ms;
+}
 
 // 用于从编码器获取数据
 HI_S32 get_hisi_video_frame(VENC_CHN VencChn, VENC_STREAM_S* pstStream)
@@ -62,9 +128,6 @@ HI_S32 get_hisi_video_frame(VENC_CHN VencChn, VENC_STREAM_S* pstStream)
     int32_t offset = 0;
     int32_t i = 0;
     int32_t ret = 0;
-
-    // TODO 播放暂停之类的逻辑还没有做
-    return HI_SUCCESS;
 
     if (VencChn != 0) {
         // 目前只使用了1路编码器
@@ -165,9 +228,10 @@ int32_t get_preview_img(uint8_t *buf)
     yuv_addr[0] = (HI_U8*) HI_MPI_SYS_Mmap(pv_ctx->pstVideoFrame.stVFrame.u64PhyAddr[0], PREVIEW_WIDTH * PREVIEW_HEIGHT);
     yuv_addr[1] = (HI_U8*) HI_MPI_SYS_Mmap(pv_ctx->pstVideoFrame.stVFrame.u64PhyAddr[1], PREVIEW_WIDTH * PREVIEW_HEIGHT / 2);
 
-    // 其实完全可以直接将yuv_addr[0]和yuv_addr[0]送入 nv21_rgb888_soft 函数进行色彩转换
-    // nv21_rgb888_soft 纯跑分性能测试 240*180 转换一次耗时不足2ms
+    // 其实完全可以直接将yuv_addr[0]和yuv_addr[1]送入 nv21_to_rgb888_soft 函数进行色彩转换
+    // nv21_to_rgb888_soft 纯跑分性能测试 240*180 转换一次耗时不足2ms
     // 但是实际测试这样做效率非常低，用户态cpu开销20%，内核态cpu开销8%，非常离谱
+    // 推测应该是大量CPU被用于在cache、linux内存空间、海思媒体内存之间进行数据交换
     // 这里做一次内存拷贝后性能基本接近跑分测试的性能
     memcpy(&pv_ctx->yuv_buf[0], yuv_addr[0], PREVIEW_WIDTH * PREVIEW_HEIGHT);
     memcpy(&pv_ctx->yuv_buf[PREVIEW_WIDTH * PREVIEW_HEIGHT], yuv_addr[1], PREVIEW_WIDTH * PREVIEW_HEIGHT / 2);
@@ -193,7 +257,7 @@ int32_t get_preview_img(uint8_t *buf)
     return 0;
 }
 
-void *pth_get_audio()
+static void *pth_get_audio()
 {
     HI_S32 s32Ret;
     HI_S32 AencFd;
@@ -310,7 +374,8 @@ int32_t ao_send_frame(uint8_t *data, int32_t len, int32_t block)
 static int32_t _ai_init()
 {
     HI_S32              i, j, s32Ret;
-    PAYLOAD_TYPE_E      enPayloadType = PT_LPCM;
+    // PAYLOAD_TYPE_E      enPayloadType = PT_LPCM;
+    PAYLOAD_TYPE_E      enPayloadType = PT_AAC;
     AUDIO_SAMPLE_RATE_E AiReSmp       = AUDIO_SAMPLE_RATE_BUTT;
     AI_CHN      AiChn;
     AENC_CHN    AeChn;
@@ -468,6 +533,8 @@ static int32_t _ao_init()
     HI_S32              s32Ret;
     PAYLOAD_TYPE_E      enPayloadType = PT_LPCM;
     AUDIO_SAMPLE_RATE_E AoReSmp       = AUDIO_SAMPLE_RATE_BUTT;
+    AUDIO_DEV AoDev = 0;
+    HI_S32 s32Volume = 0;
 
     AIO_ATTR_S stAoAttr;
     stAoAttr.enSamplerate   = g_AoSamplerate;
@@ -507,6 +574,13 @@ static int32_t _ao_init()
     {
         printf("HIMPP_AUDIO_AoBindAdec failed with %#x!\n", s32Ret);
         goto ADECAO_ERR1;
+    }
+
+    // 音量按实际设置，单位db，取值范围[-121,6]，默认0就可以
+    s32Ret = HI_MPI_AO_SetVolume(AoDev, s32Volume);
+    if (HI_SUCCESS != s32Ret)
+    {
+        printf("HI_MPI_AO_SetVolume(%d), failed with %#x!\n", AoDev, s32Ret);
     }
 
     return 0;
@@ -645,7 +719,7 @@ HI_S32 HIMPP_MPP_SYS_Init()
 }
 
 // 这个函数所有初始化失败的地方都没有做处理
-int32_t hisi_media_init()
+int32_t hisi_media_init(char *path)
 {    
     int32_t i;
 
@@ -657,7 +731,7 @@ int32_t hisi_media_init()
     HIMPP_MPP_SYS_Init();
     // 初始化 VI,VPSS,VENC
     HIMPP_VENC_H265_H264();
-    // hisi_media_init 内会改变一些寄存器，OV5640初始化只能放它后面
+    // HIMPP_VENC_H265_H264 内会改变一些寄存器，OV5640初始化只能放它后面
     // VICAP 寄存器，自己摸索出来的配置，手册中说明3516EV200不支持MIPI输入YUV，瞎调给调通了
     himm(0x11001010, 0xFF000000);
     himm(0x11001014, 0xFF000000);
@@ -686,8 +760,8 @@ int32_t hisi_media_init()
     }
 
     // 开启音频
-    // _ai_init();
-    // _ao_init();
+    _ai_init();
+    _ao_init();
 
     pthread_mutex_lock(&sg_media_ctx.lock);
     sg_media_ctx.hisi_state = HISI_SDK_INIT_OK;
@@ -705,8 +779,8 @@ int32_t hisi_media_exit()
     pthread_mutex_unlock(&sg_media_ctx.lock);
 
     // 关闭音频
-    // _ao_exit();
-    // _ai_exit();
+    _ao_exit();
+    _ai_exit();
 
     // 停止取流
     HIMPP_VENC_StopGetStream();
@@ -725,11 +799,17 @@ int32_t hisi_media_exit()
 }
 
 
-int32_t cam_media_init()
+int32_t cam_media_init(char *path)
 {
     memset(&sg_media_ctx, 0, sizeof(media_context_t));
 
     pthread_mutex_init(&sg_media_ctx.lock, NULL);
+
+    if (strlen(path) > sizeof(sg_media_ctx.dir_path) - 1) {
+        return 1;
+    }
+    strcpy(sg_media_ctx.dir_path, path);
+
     sg_media_ctx.vbuf = (uint8_t *)malloc(g_u32SuperFrameSize);
     if (sg_media_ctx.vbuf == NULL) {
         return 1;

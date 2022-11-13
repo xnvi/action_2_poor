@@ -24,7 +24,7 @@ extern "C" {
 #include <signal.h>
 
 #include "himpp.h"
-#include "camera_config.h"
+#include "camera_himpp_config.h"
 
 #define BIG_STREAM_SIZE     PIC_2688x1944
 #define SMALL_STREAM_SIZE   PIC_VGA
@@ -1088,6 +1088,7 @@ HI_S32 HIMPP_VENC_H265_H264(void)
     start stream venc
     ******************************************/
 
+    // my edit
     //手动设置码率控制模式，参考 hiHIMPP_RC_E
     enRcMode = HIMPP_RC_CBR;
     // enRcMode = HIMPP_RC_VBR;

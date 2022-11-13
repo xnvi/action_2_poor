@@ -12,12 +12,13 @@ include_directories(../../utils/st7789_ko/)
 include_directories(../../ext_lib/lvgl/)
 include_directories(../../ext_lib/libmpeg/include)
 include_directories(../../ext_lib/stb)
+include_directories(../../ext_lib/cJSON)
 
 # 添加源文件
 list(APPEND SOURCE_CODE
     ./main.c
     ./src/media.c
-    ./src/camera_config.c
+    ./src/camera_himpp_config.c
     ./src/cam_gui.c
     ./src/color_convert.c
     ./src/audio_aac_adp.c
@@ -29,11 +30,18 @@ list(APPEND SOURCE_CODE
     ./src/himpp_venc.c
     ./src/himpp_vi.c
     ./src/himpp_vpss.c
+    ./src/file_opt.c
+    ./src/key.c
     ./src/ts_mux.c
     ../../utils/himm.c
     ../../utils/ft6206.c
+    ../../utils/hisi_adc.c
+    ../../utils/gpio.c
     ../../utils/i2c.c
     ../../utils/lv_stb_truetype.c
+    ../../utils/mpu6050.c
+    ../../utils/gyroflow_log.c
+    ../../ext_lib/cJSON/cJSON.c
 )
 
 # 添加 LVGL 源文件
