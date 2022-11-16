@@ -18,8 +18,8 @@
 #include "audio_aac_adp.h"
 
 // 目前只能测一个，不能同时启用
-#define DEBUG_AUDIO 1
-#define DEBUG_VIDEO 0
+#define DEBUG_AUDIO 0
+#define DEBUG_VIDEO 1
 
 
 extern void OV5640_init(VI_PIPE ViPipe);
@@ -241,16 +241,16 @@ HI_S32 get_hisi_video_frame(VENC_CHN VencChn, VENC_STREAM_S* pstStream)
         vdata->pts_ms = pstStream->pstPack->u64PTS / 1000;
         for (i = 0; i < pstStream->u32PackCount; i++)
         {
-            // if (g_enPayLoad[i] == PT_H264) {
+            if (g_enPayLoad[i] == PT_H264) {
                 if (pstStream->pstPack[i].DataType.enH264EType >= H264E_NALU_IDRSLICE) {
                     vdata->is_i_frame = 1;
                 }
-            // }
-            // else if (g_enPayLoad[i] == PT_H265) {
-            //     if (pstStream->pstPack[i].DataType.enH265EType >= H265E_NALU_IDRSLICE) {
-            //         vdata->is_i_frame = 1;
-            //     }
-            // }
+            }
+            else if (g_enPayLoad[i] == PT_H265) {
+                if (pstStream->pstPack[i].DataType.enH265EType >= H265E_NALU_IDRSLICE) {
+                    vdata->is_i_frame = 1;
+                }
+            }
 
             int pack_size = pstStream->pstPack[i].u32Len - pstStream->pstPack[i].u32Offset;
             uint8_t *addr = pstStream->pstPack[i].pu8Addr + pstStream->pstPack[i].u32Offset;
@@ -452,7 +452,7 @@ int main()
     // 初始化 VI,VPSS,VENC
     HIMPP_VENC_H265_H264();
 
-	// hisi_media_init 内会改变一些寄存器，OV5640初始化只能放它后面
+	// HIMPP_VENC_H265_H264 内会改变一些寄存器，OV5640初始化只能放它后面
 	// VICAP 寄存器，自己摸索出来的配置，手册中说明3516EV200不支持MIPI输入YUV，瞎调给调通了
 	himm(0x11001010, 0xFF000000);
     himm(0x11001014, 0xFF000000);

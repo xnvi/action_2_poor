@@ -21,7 +21,7 @@ list(APPEND LIBMPEG_SOURCE
     # source/mpeg-ps-enc.c
     # source/mpeg-psd.c
     # source/mpeg-psm.c
-    # source/mpeg-sdt.c
+    source/mpeg-sdt.c
     # source/mpeg-system-header.c
     # source/mpeg-ts-dec.c
     source/mpeg-ts-enc.c

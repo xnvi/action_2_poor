@@ -14,8 +14,8 @@ include_directories(../../ext_lib/lvgl/)
 # 添加源文件
 list(APPEND SOURCE_CODE
     ./main.c
-	../../utils/himm.c
-	../../utils/ft6206.c
+    ../../utils/himm.c
+    ../../utils/ft6206.c
     ../../utils/i2c.c
 )
 

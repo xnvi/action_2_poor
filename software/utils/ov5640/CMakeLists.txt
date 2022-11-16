@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 # libsns_ov5640.so
 project (libsns_ov5640_shared LANGUAGES C)
-add_compile_options(-O2 -g -Wall -fPIC)
+add_compile_options(-Os -g -Wall -fPIC)
 set(CMAKE_BUILD_TYPE "Debug")
 
 add_compile_definitions(
